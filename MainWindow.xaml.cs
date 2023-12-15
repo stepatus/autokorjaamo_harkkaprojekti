@@ -16,7 +16,6 @@ using System.Windows.Shapes;
 
 using Microsoft.Data.SqlClient;
 
-
 //Mustajärvi Teemu ja Esa Yritys yhteinen projekti
 namespace Harkkaprojekti
 {
@@ -34,9 +33,12 @@ namespace Harkkaprojekti
             paivitaDataGrid("SELECT * FROM VARAOSAT", "VARAOSAT", varaosat_tiedot);
             paivitaDataGrid("SELECT * FROM AUTOT", "AUTOT", auton_tiedot);
 
-            paivitaDataGrid("SELECT ASIAKKAAT.id as id, ASIAKKAAT.nimi AS nimi, ASIAKKAAT.puhelinnro AS puhelinnumero, VARAOSAT.nimi AS varaosan_nimi, VARAOSAT.hinta AS hinta, AUTOT.merkki AS merkki, AUTOT.malli AS malli, HUOLTOTILAUS.toimitettu AS KUITTI FROM VARAOSAT, ASIAKKAAT, AUTOT, HUOLTOTILAUS", "HUOLTOTILAUS", huolto_tiedot);
+            paivitaDataGrid("SELECT HUOLTOTILAUS.id as id, ASIAKKAAT.nimi AS nimi, ASIAKKAAT.puhelinnro AS puhelinnumero, VARAOSAT.nimi AS varaosan_nimi, VARAOSAT.hinta AS hinta, AUTOT.merkki AS merkki, AUTOT.malli AS malli, HUOLTOTILAUS.toimitettu AS KUITTI FROM VARAOSAT, ASIAKKAAT, AUTOT, HUOLTOTILAUS WHERE ASIAKKAAT.ID=HUOLTOTILAUS.asiakas_id AND AUTOT.ID=HUOLTOTILAUS.auto_id AND VARAOSAT.ID=HUOLTOTILAUS.varosa_id AND HUOLTOTILAUS.toimitettu='0'", "HUOLTOTILAUS", huolto_tiedot);
+            paivitaDataGrid("SELECT HUOLTOTILAUS.id as id, ASIAKKAAT.nimi AS nimi, ASIAKKAAT.puhelinnro AS puhelinnumero, VARAOSAT.nimi AS varaosan_nimi, VARAOSAT.hinta AS hinta, AUTOT.merkki AS merkki, AUTOT.malli AS malli, HUOLTOTILAUS.toimitettu AS TOIMITETTU FROM VARAOSAT, ASIAKKAAT, AUTOT, HUOLTOTILAUS WHERE ASIAKKAAT.ID=HUOLTOTILAUS.asiakas_id AND AUTOT.ID=HUOLTOTILAUS.auto_id AND VARAOSAT.ID=HUOLTOTILAUS.varosa_id AND HUOLTOTILAUS.toimitettu='1'", "kuitti", toimitettu_lista);
+
             päivitäCombobox();
         }
+
 
         //Asiakkaan lisäys omaan tauluun
         private void painike_lisää_Click(object sender, RoutedEventArgs e)
@@ -116,6 +118,7 @@ namespace Harkkaprojekti
         //Comboboxien päivittäminen aina tiedon lisäämisen jälkeen
         private void päivitäCombobox() 
         {
+            //Asiakkaat boxin täyttö
             SqlConnection kanta = new SqlConnection(polku);
             kanta.Open();
 
@@ -224,7 +227,6 @@ namespace Harkkaprojekti
                 SqlCommand komento3 = new SqlCommand("DELETE from VARAOSAT WHERE id = " + id3 + ";", kanta);
                 komento3.ExecuteNonQuery();
             }
-            kanta.Close();
 
             päivitäCombobox();
             paivitaDataGrid("SELECT * FROM ASIAKKAAT", "ASIAKKAAT", asiakas_lista);
@@ -249,8 +251,33 @@ namespace Harkkaprojekti
             SqlCommand komento = new SqlCommand(sql, kanta);
             komento.ExecuteNonQuery();
             kanta.Close();
+            paivitaDataGrid("SELECT HUOLTOTILAUS.id as id, ASIAKKAAT.nimi AS nimi, ASIAKKAAT.puhelinnro AS puhelinnumero, VARAOSAT.nimi AS varaosan_nimi, VARAOSAT.hinta AS hinta, AUTOT.merkki AS merkki, AUTOT.malli AS malli, HUOLTOTILAUS.toimitettu AS KUITTI FROM VARAOSAT, ASIAKKAAT, AUTOT, HUOLTOTILAUS WHERE ASIAKKAAT.ID=HUOLTOTILAUS.asiakas_id AND AUTOT.ID=HUOLTOTILAUS.auto_id AND VARAOSAT.ID=HUOLTOTILAUS.varosa_id AND HUOLTOTILAUS.toimitettu='0'", "HUOLTOTILAUS", huolto_tiedot);
 
-            paivitaDataGrid("SELECT ASIAKKAAT.id as id, ASIAKKAAT.nimi AS nimi, ASIAKKAAT.puhelinnro AS puhelinnumero, VARAOSAT.nimi AS varaosan_nimi, VARAOSAT.hinta AS hinta, AUTOT.merkki AS merkki, AUTOT.malli AS malli, HUOLTOTILAUS.toimitettu AS KUITTI FROM VARAOSAT, ASIAKKAAT, AUTOT, HUOLTOTILAUS", "HUOLTOTILAUS", huolto_tiedot);
+        }
+
+
+        //Tietojen vieminen huoltotiedoista työn valmistuttua kuitti listalle
+        private void huolto_tiedot_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+                if (huolto_tiedot.SelectedItem != null)
+                {
+                    DataRowView rowView = (DataRowView)huolto_tiedot.SelectedItem;
+                    solun_arvo = rowView["id"].ToString();
+
+                    SqlConnection kanta = new SqlConnection(polku);
+                    kanta.Open();
+
+                    string sql = "UPDATE HUOLTOTILAUS SET toimitettu = 1 WHERE id = '" + solun_arvo + "';";
+
+                    SqlCommand komento = new SqlCommand(sql, kanta);
+                    komento.ExecuteNonQuery();
+                    kanta.Close();
+                    
+                    paivitaDataGrid("SELECT HUOLTOTILAUS.id as id, ASIAKKAAT.nimi AS nimi, ASIAKKAAT.puhelinnro AS puhelinnumero, VARAOSAT.nimi AS varaosan_nimi, VARAOSAT.hinta AS hinta, AUTOT.merkki AS merkki, AUTOT.malli AS malli, HUOLTOTILAUS.toimitettu AS KUITTI FROM VARAOSAT, ASIAKKAAT, AUTOT, HUOLTOTILAUS WHERE ASIAKKAAT.ID=HUOLTOTILAUS.asiakas_id AND AUTOT.ID=HUOLTOTILAUS.auto_id AND VARAOSAT.ID=HUOLTOTILAUS.varosa_id AND HUOLTOTILAUS.toimitettu='0'", "HUOLTOTILAUS", huolto_tiedot);
+                    paivitaDataGrid("SELECT HUOLTOTILAUS.id as id, ASIAKKAAT.nimi AS nimi, ASIAKKAAT.puhelinnro AS puhelinnumero, VARAOSAT.nimi AS varaosan_nimi, VARAOSAT.hinta AS hinta, AUTOT.merkki AS merkki, AUTOT.malli AS malli, HUOLTOTILAUS.toimitettu AS TOIMITETTU FROM VARAOSAT, ASIAKKAAT, AUTOT, HUOLTOTILAUS WHERE ASIAKKAAT.ID=HUOLTOTILAUS.asiakas_id AND AUTOT.ID=HUOLTOTILAUS.auto_id AND VARAOSAT.ID=HUOLTOTILAUS.varosa_id AND HUOLTOTILAUS.toimitettu='1'", "kuitti", toimitettu_lista);
+                }
+          
         }
     }
+
 }
